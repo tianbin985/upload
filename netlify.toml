@@ -2,6 +2,7 @@
   from = "/"
   to = "/login.html"
   status = 200
+  force = true  # 强制覆盖所有规则
 
 [[redirects]]
   from = "/home"

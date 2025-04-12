@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            overflow: hidden; /* 防止滚动条 */
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: url('cool-background.jpg') no-repeat center center fixed; /* 添加背景图 */
+            background-size: cover; /* 确保背景图沾满屏幕且不失真 */
+        }
+        canvas {
+            position: fixed; /* 确保动画在最底层 */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* 设置为最底层 */
+        }
+        .container {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 20px;
+            border-radius: 10px;
+            width: 300px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: auto;
+        }
+        .container h1 {
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group input, .form-group button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .form-group button {
+            background: #2575fc;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .form-group button:hover {
+            background: #2575fc !important; /* 强制保持背景颜色 */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important; /* 强制应用阴影效果 */
+        }
+        button:hover {
+            background: inherit; /* 保持背景颜色不变 */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* 添加阴影效果 */
+        }
+        .links {
+            margin-top: 15px;
+        }
+        .links a {
+            color: #fff;
+            text-decoration: none;
+            margin: 0 5px;
+            cursor: pointer;
+        }
+        .links a:hover {
+            text-decoration: none; /* 去掉鼠标悬浮时的下划线 */
+        }
+        input:focus {
+            outline: none; /* 移除黑框 */
+            box-shadow: 0 0 5px rgba(37, 117, 252, 0.8); /* 添加柔和的蓝色阴影 */
+        }
+    </style>
+</head>
+<body>
+    <canvas></canvas>
+    <div class="container">
+        <h1 id="form-title">登录</h1>
+        <div id="form-content">
+            <form>
+                <div class="form-group">
+                    <input type="text" placeholder="用户名/邮箱/手机号" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" placeholder="密码" required>
+                </div>
+                <div class="form-group">
+                    <button type="submit">登录</button>
+                </div>
+            </form>
+        </div>
+        <div class="links">
+            <a onclick="showForm('register-email')">邮箱注册</a>
+            <a onclick="showForm('register-phone')">手机注册</a>
+            <a onclick="showForm('forgot-password')">忘记密码</a>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.querySelector('canvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const particlesArray = [];
+
+        const mouse = {
+            x: null,
+            y: null
+        };
+
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = event.x;
+            mouse.y = event.y;
+
+            particlesArray.forEach((particle) => {
+                const dx = mouse.x - particle.x;
+                const dy = mouse.y - particle.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < 100) { // 距离小于100时粒子跟随鼠标
+                    particle.x += dx * 0.02; // 减弱吸附效果
+                    particle.y += dy * 0.02; // 减弱吸附效果
+                }
+            });
+        });
+
+        class Particle {
+            constructor(x, y, size, speedX, speedY) {
+                this.x = x;
+                this.y = y;
+                this.size = size;
+                this.speedX = speedX;
+                this.speedY = speedY;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                if (this.x > canvas.width || this.x < 0) this.speedX *= -1;
+                if (this.y > canvas.height || this.y < 0) this.speedY *= -1;
+            }
+
+            draw() {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function connectParticles() {
+            for (let a = 0; a < particlesArray.length; a++) {
+                for (let b = a + 1; b < particlesArray.length; b++) {
+                    const dx = particlesArray[a].x - particlesArray[b].x;
+                    const dy = particlesArray[a].y - particlesArray[b].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 100) {
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${1 - distance / 100})`;
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(particlesArray[a].x, particlesArray[a].y);
+                        ctx.lineTo(particlesArray[b].x, particlesArray[b].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        function init() {
+            for (let i = 0; i < 100; i++) {
+                const size = Math.random() * 5 + 1;
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const speedX = Math.random() * 3 - 1.5;
+                const speedY = Math.random() * 3 - 1.5;
+                particlesArray.push(new Particle(x, y, size, speedX, speedY));
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+                particlesArray[i].draw();
+            }
+            connectParticles();
+            requestAnimationFrame(animate);
+        }
+
+        init();
+        animate();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        function showForm(type) {
+            const formTitle = document.getElementById('form-title');
+            const formContent = document.getElementById('form-content');
+
+            if (type === 'register-email') {
+                formTitle.textContent = '邮箱注册';
+                formContent.innerHTML = `
+                    <form>
+                        <div class="form-group">
+                            <input type="email" placeholder="请输入邮箱" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="password" placeholder="设置密码" required>
+                        </div>
+                        <div class="form-group">
+                            <button type="submit">注册</button>
+                        </div>
+                    </form>
+                    <div class="links">
+                        <a onclick="showForm('login')">已有账号？返回登录</a>
+                    </div>
+                `;
+            } else if (type === 'register-phone') {
+                formTitle.textContent = '手机注册';
+                formContent.innerHTML = `
+                    <form>
+                        <div class="form-group">
+                            <input type="tel" placeholder="请输入手机号" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="password" placeholder="设置密码" required>
+                        </div>
+                        <div class="form-group">
+                            <button type="submit">注册</button>
+                        </div>
+                    </form>
+                    <div class="links">
+                        <a onclick="showForm('login')">已有账号？返回登录</a>
+                    </div>
+                `;
+            } else if (type === 'forgot-password') {
+                formTitle.textContent = '忘记密码';
+                formContent.innerHTML = `
+                    <form>
+                        <div class="form-group">
+                            <input type="email" placeholder="请输入注册邮箱" required>
+                        </div>
+                        <div class="form-group">
+                            <button type="submit">重置密码</button>
+                        </div>
+                    </form>
+                    <div class="links">
+                        <a onclick="showForm('login')">已有账号？返回登录</a>
+                    </div>
+                `;
+            } else if (type === 'login') {
+                formTitle.textContent = '登录';
+                formContent.innerHTML = `
+                    <form>
+                        <div class="form-group">
+                            <input type="text" placeholder="用户名/邮箱/手机号" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="password" placeholder="密码" required>
+                        </div>
+                        <div class="form-group">
+                            <button type="submit">登录</button>
+                        </div>
+                    </form>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>文件上传</title>
+    <title>模型上传</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -12,6 +14,7 @@
             background: linear-gradient(135deg, #1e1e2f, #27293d);
             color: #fff;
             box-sizing: border-box; /* 添加 box-sizing 以确保所有元素的宽度计算包含内边距和边框 */
+            overflow: hidden; /* 禁止页面整体滚动 */
         }
         *, *::before, *::after {
             box-sizing: inherit;
@@ -24,8 +27,10 @@
             border-radius: 15px;
             box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
             text-align: center;
-            max-height: 80vh; /* 限制容器高度 */
-            overflow-y: auto; /* 添加垂直滚动条 */
+            max-height: 80vh; /* 高度最多占用页面的 80% */
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* 垂直居中 */
         }
         h2 {
             margin-bottom: 20px;
@@ -48,11 +53,16 @@
             padding: 10px 20px;
             border-radius: 5px;
             cursor: pointer;
+            content: "选择模型"; /* 修改按钮文本为“选择模型” */
         }
         .progress-bar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-radius: 10px; /* 圆润边角 */
+            background: none; /* 移除背景颜色 */
+            padding: 10px 0;
             width: 100%;
-            background-color: rgba(255, 255, 255, 0.2);
-            border-radius: 5px;
             overflow: hidden;
             margin-top: 10px;
         }
@@ -64,8 +74,11 @@
             color: #fff;
             line-height: 20px;
             transition: width 0.4s ease;
+            border-radius: 10px; /* 圆润边角 */
         }
         .preview-container {
+            max-height: calc(100vh - 200px); /* 限制高度，确保仅在此区域滚动 */
+            overflow-y: auto; /* 添加垂直滚动条 */
             margin-top: 20px;
         }
         .preview-item {
@@ -136,17 +149,82 @@
                 max-height: 50px;
             }
         }
+        /* 添加下拉菜单样式 */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.9);
+            min-width: 100%; /* 宽度与 user-info 一致 */
+            box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+            border-radius: 5px;
+            text-align: center; /* 文字居中 */
+        }
+        .dropdown-content a {
+            color: #fff;
+            padding: 10px 15px;
+            text-decoration: none;
+            display: flex; /* 使用 flex 布局 */
+            align-items: center; /* 垂直居中 */
+            justify-content: center; /* 水平居中 */
+            gap: 10px; /* 图标与文字间距 */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .dropdown-content a:last-child {
+            border-bottom: none;
+        }
+        .dropdown-content a:hover {
+            background-color: #007bff;
+        }
+        .dropdown-content a i {
+            font-size: 16px; /* 图标大小 */
+        }
+        .dropdown:hover .dropdown-content {
+            display: block; /* 鼠标悬浮时显示下拉菜单 */
+        }
+        #user-info {
+            display: flex;
+            align-items: center; /* 垂直居中 */
+            height: 60px; /* 高度占满导航栏 */
+        }
+        nav {
+            padding: 0 20px; /* 左右保留20px */
+        }
     </style>
 </head>
 <body>
-    <div class="upload-container">
-        <h2>文件上传</h2>
+    <nav style="display: flex; justify-content: space-between; align-items: center; height: 60px; background: rgba(0, 0, 0, 0.8); color: #fff; position: fixed; top: 0; width: 100%; z-index: 1000; padding: 0 20px;">
+        <div style="font-size: 20px; font-weight: bold;">轻量化转换工具</div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="dropdown">
+                <span id="user-info" style="cursor: pointer;">欢迎, 用户</span>
+                <div class="dropdown-content">
+                    <a href="logs.html" id="view-logs">
+                        <i class="fas fa-book"></i> 查看日志
+                    </a>
+                    <a href="logs.html" id="view-logs">
+                        <i class="fas fa-folder-open"></i> 查看模版
+                    </a>
+                    <a href="#" id="logout-button">
+                        <i class="fas fa-sign-out-alt"></i> 退出登录
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <div class="upload-container" style="margin-top: 70px;">
+        <h2>模型上传</h2>
         <input type="file" id="fileInput" multiple>
         <div class="progress-bar">
             <div class="progress-bar-fill" id="progressBarFill">0%</div>
         </div>
         <div class="preview-container" id="previewContainer"></div>
     </div>
+    <script src="config.js"></script>
     <script>
         const fileInput = document.getElementById('fileInput');
         const progressBarFill = document.getElementById('progressBarFill');
@@ -180,10 +258,35 @@
                 deleteButton.addEventListener('click', () => {
                     previewContainer.removeChild(previewItem);
                 });
+
+                // 调用上传接口
+                uploadFile(file);
             });
 
             simulateUpload(files);
         });
+
+        function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch(`${API_CONFIG.getBaseURL()}/users/upload`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('上传失败');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('上传成功:', data);
+            })
+            .catch(error => {
+                console.error('上传错误:', error);
+            });
+        }
 
         function simulateUpload(files) {
             let uploaded = 0;
@@ -198,6 +301,27 @@
                 }
             }, 500); // 模拟每500ms上传一个文件
         }
+
+        // 模拟用户信息
+        const userInfo = document.getElementById('user-info');
+        const logoutButton = document.getElementById('logout-button');
+
+        // 设置用户信息
+        const username = sessionStorage.getItem('username') || '用户';
+        userInfo.textContent = `欢迎, ${username}`;
+
+        // 退出登录逻辑
+        logoutButton.addEventListener('click', () => {
+            sessionStorage.removeItem('isLoggedIn');
+            sessionStorage.removeItem('username');
+            window.location.href = 'login.html'; // 跳转到登录页面
+        });
+
+        // 查看日志逻辑
+        const viewLogs = document.getElementById('view-logs');
+        viewLogs.addEventListener('click', () => {
+            window.location.href = 'logs.html'; // 跳转到日志页面
+        });
     </script>
 </body>
 </html>

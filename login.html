@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-cn">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,90 +9,131 @@
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            overflow: hidden; /* 防止滚动条 */
+            overflow: hidden;
+            /* 防止滚动条 */
             color: #fff;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background: url('cool-background.jpg') no-repeat center center fixed; /* 添加背景图 */
-            background-size: cover; /* 确保背景图沾满屏幕且不失真 */
+            background: url('cool-background.jpg') no-repeat center center fixed;
+            /* 添加背景图 */
+            background-size: cover;
+            /* 确保背景图沾满屏幕且不失真 */
         }
+
         canvas {
-            position: fixed; /* 确保动画在最底层 */
+            position: fixed;
+            /* 确保动画在最底层 */
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: -1; /* 设置为最底层 */
+            z-index: -1;
+            /* 设置为最底层 */
         }
+
         .container {
             background: rgba(0, 0, 0, 0.6);
-            padding: 20px;
+            padding: 40px;
             border-radius: 10px;
-            width: 300px;
+            width: 350px;
             text-align: center;
             display: flex;
             flex-direction: column;
             justify-content: center;
             height: auto;
         }
+
         .container h1 {
             margin-bottom: 20px;
         }
+
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 22px;
+            position: relative;
         }
-        .form-group input, .form-group button {
+
+        .form-group input,
+        .form-group button {
             width: 100%;
             padding: 10px;
             border: none;
             border-radius: 5px;
             box-sizing: border-box;
         }
+
         .form-group button {
             background: #2575fc;
             color: #fff;
             font-size: 16px;
             cursor: pointer;
         }
+
         .form-group button:hover {
-            background: #2575fc !important; /* 强制保持背景颜色 */
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important; /* 强制应用阴影效果 */
+            background: #2575fc !important;
+            /* 强制保持背景颜色 */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+            /* 强制应用阴影效果 */
         }
+
         button:hover {
-            background: inherit; /* 保持背景颜色不变 */
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* 添加阴影效果 */
+            background: inherit;
+            /* 保持背景颜色不变 */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            /* 添加阴影效果 */
         }
+
         .links {
             margin-top: 15px;
         }
+
         .links a {
             color: #fff;
             text-decoration: none;
             margin: 0 5px;
             cursor: pointer;
         }
+
         .links a:hover {
-            text-decoration: none; /* 去掉鼠标悬浮时的下划线 */
+            text-decoration: none;
+            /* 去掉鼠标悬浮时的下划线 */
         }
+
         input:focus {
-            outline: none; /* 移除黑框 */
-            box-shadow: 0 0 5px rgba(37, 117, 252, 0.8); /* 添加柔和的蓝色阴影 */
+            outline: none;
+            /* 移除黑框 */
+            box-shadow: 0 0 5px rgba(37, 117, 252, 0.8);
+            /* 添加柔和的蓝色阴影 */
+        }
+
+        .form-group small {
+            color: red;
+            display: none;
+            font-size: 12px;
+            position: absolute;
+            top: 100%;
+            /* 定位到输入框下方 */
+            left: 0;
+            margin-top: 5px;
+            /* 与输入框保持一定距离 */
         }
     </style>
 </head>
+
 <body>
     <canvas></canvas>
     <div class="container">
         <h1 id="form-title">登录</h1>
         <div id="form-content">
-            <form>
+            <form onsubmit="handleLogin(event)">
                 <div class="form-group">
-                    <input type="text" placeholder="用户名/邮箱/手机号" required>
+                    <input type="text" id="login-identifier" placeholder="邮箱/手机号" required>
+                    <small id="identifier-error"></small>
                 </div>
                 <div class="form-group">
-                    <input type="password" placeholder="密码" required>
+                    <input type="password" id="login-password" placeholder="密码" required>
+                    <small id="password-error"></small>
                 </div>
                 <div class="form-group">
                     <button type="submit">登录</button>
@@ -105,6 +147,7 @@
         </div>
     </div>
 
+    <script src="config.js"></script>
     <script>
         const canvas = document.querySelector('canvas');
         const ctx = canvas.getContext('2d');
@@ -181,11 +224,11 @@
 
         function init() {
             for (let i = 0; i < 100; i++) {
-                const size = Math.random() * 5 + 1;
+                const size = Math.random() * 3 + 0.5; // 调整粒子大小范围为 0.5 到 3
                 const x = Math.random() * canvas.width;
                 const y = Math.random() * canvas.height;
-                const speedX = Math.random() * 3 - 1.5;
-                const speedY = Math.random() * 3 - 1.5;
+                const speedX = Math.random() * 1.5 - 0.75; // 调整速度范围为 -0.75 到 0.75
+                const speedY = Math.random() * 1.5 - 0.75; // 调整速度范围为 -0.75 到 0.75
                 particlesArray.push(new Particle(x, y, size, speedX, speedY));
             }
         }
@@ -215,12 +258,12 @@
             if (type === 'register-email') {
                 formTitle.textContent = '邮箱注册';
                 formContent.innerHTML = `
-                    <form>
+                    <form onsubmit="handleRegister(event, 'email')">
                         <div class="form-group">
-                            <input type="email" placeholder="请输入邮箱" required>
+                            <input type="email" id="email" placeholder="请输入邮箱" required>
                         </div>
                         <div class="form-group">
-                            <input type="password" placeholder="设置密码" required>
+                            <input type="password" id="password" placeholder="设置密码" required>
                         </div>
                         <div class="form-group">
                             <button type="submit">注册</button>
@@ -233,12 +276,12 @@
             } else if (type === 'register-phone') {
                 formTitle.textContent = '手机注册';
                 formContent.innerHTML = `
-                    <form>
+                    <form onsubmit="handleRegister(event, 'phone')">
                         <div class="form-group">
-                            <input type="tel" placeholder="请输入手机号" required>
+                            <input type="tel" id="phone" placeholder="请输入手机号" required>
                         </div>
                         <div class="form-group">
-                            <input type="password" placeholder="设置密码" required>
+                            <input type="password" id="password" placeholder="设置密码" required>
                         </div>
                         <div class="form-group">
                             <button type="submit">注册</button>
@@ -266,12 +309,14 @@
             } else if (type === 'login') {
                 formTitle.textContent = '登录';
                 formContent.innerHTML = `
-                    <form>
+                    <form onsubmit="handleLogin(event)">
                         <div class="form-group">
-                            <input type="text" placeholder="用户名/邮箱/手机号" required>
+                            <input type="text" id="login-identifier" placeholder="邮箱/手机号" required>
+                            <small id="identifier-error"></small>
                         </div>
                         <div class="form-group">
-                            <input type="password" placeholder="密码" required>
+                            <input type="password" id="login-password" placeholder="密码" required>
+                            <small id="password-error"></small>
                         </div>
                         <div class="form-group">
                             <button type="submit">登录</button>
@@ -280,6 +325,107 @@
                 `;
             }
         }
+
+        function validateIdentifier(identifier) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // 邮箱正则
+            const phoneRegex = /^1[3-9]\d{9}$/; // 手机号正则（中国大陆）
+            return emailRegex.test(identifier) || phoneRegex.test(identifier);
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+
+            const identifier = document.getElementById('login-identifier').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+            const identifierError = document.getElementById('identifier-error');
+            const passwordError = document.getElementById('password-error');
+
+            // 重置错误提示
+            identifierError.style.display = 'none';
+            passwordError.style.display = 'none';
+
+            let hasError = false;
+
+            if (!validateIdentifier(identifier)) {
+                identifierError.textContent = '请输入正确的邮箱或手机号';
+                identifierError.style.display = 'block';
+                hasError = true;
+            }
+
+            if (!password) {
+                passwordError.textContent = '密码不能为空';
+                passwordError.style.display = 'block';
+                hasError = true;
+            }
+
+            if (hasError) return;
+
+            const data = { identifier, password };
+
+            try {
+                const response = await fetch(`${API_CONFIG.getBaseURL()}/users/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (result.code === 200) {
+                    alert('登录成功！');
+                    sessionStorage.setItem('isLoggedIn', 'true');
+                    sessionStorage.setItem('username', identifier); // 保存用户名
+                    window.location.href = 'index.html'; // 登录成功后跳转到 index.html
+                } else {
+                    identifierError.textContent = result.message || '登录失败';
+                    identifierError.style.display = 'block';
+                }
+            } catch (error) {
+                identifierError.textContent = '登录失败，请稍后重试。';
+                identifierError.style.display = 'block';
+                console.error('登录请求出错:', error);
+            }
+        }
+
+        // 注册接口
+        async function handleRegister(event, type) {
+            event.preventDefault();
+
+            const email = document.getElementById('email')?.value || '';
+            const phoneNumber = document.getElementById('phone')?.value || '';
+            const password = document.getElementById('password')?.value || '';
+
+            // 构建请求体：根据 type 决定字段
+            const data = type === 'email'
+                ? { email, password }
+                : { phoneNumber, password };
+
+            // 根据 type 决定请求地址
+            const endpoint = type === 'email'
+                ? `${API_CONFIG.getBaseURL()}/users/register/email`
+                : `${API_CONFIG.getBaseURL()}/users/register/phone`;
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                if (result.code === 200) {
+                    alert('注册成功！');
+                    showForm('login');
+                } else {
+                    alert(result.message || '注册失败');
+                }
+            } catch (error) {
+                alert('注册失败，请稍后重试。');
+                console.error('注册请求出错:', error);
+            }
+        }
+
+
     </script>
 </body>
+
 </html>

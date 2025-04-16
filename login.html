@@ -118,6 +118,13 @@
             margin-top: 5px;
             /* 与输入框保持一定距离 */
         }
+
+        #captcha-image {
+            height: 35px; /* 设置高度 */
+            width: auto; /* 保持宽高比 */
+            border: 1px solid #ccc; /* 添加边框 */
+            border-radius: 5px; /* 圆角边框 */
+        }
     </style>
 </head>
 
@@ -134,6 +141,11 @@
                 <div class="form-group">
                     <input type="password" id="login-password" placeholder="密码" required>
                     <small id="password-error"></small>
+                </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                    <input type="text" id="captcha-code" placeholder="请输入验证码" style="flex: 2;" required>
+                    <img id="captcha-image" src="" alt="验证码" style="flex: 1; cursor: pointer;" onclick="refreshCaptcha()">
+                    <small id="captcha-error"></small>
                 </div>
                 <div class="form-group">
                     <button type="submit">登录</button>
@@ -262,6 +274,10 @@
                         <div class="form-group">
                             <input type="email" id="email" placeholder="请输入邮箱" required>
                         </div>
+                        <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                            <input type="text" id="emailVerificationCode" placeholder="请输入验证码" style="flex: 2; height: 40px;" required maxlength="6" oninput="this.value = this.value.replace(/\\D/g, '')">
+                            <button type="button" id="getEmailVerificationCode" style="flex: 1; height: 40px; padding: 0;">获取验证码</button>
+                        </div>
                         <div class="form-group">
                             <input type="password" id="password" placeholder="设置密码" required>
                         </div>
@@ -273,6 +289,61 @@
                         <a onclick="showForm('login')">已有账号？返回登录</a>
                     </div>
                 `;
+
+                // 获取验证码按钮逻辑
+                const getEmailVerificationCodeButton = document.getElementById('getEmailVerificationCode');
+                getEmailVerificationCodeButton.addEventListener('click', async () => {
+                    const email = document.getElementById('email').value.trim();
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+                    // 移除之前的错误提示
+                    const existingError = document.querySelector('#email + small');
+                    if (existingError) {
+                        existingError.remove();
+                    }
+
+                    // 验证邮箱格式
+                    if (!emailRegex.test(email)) {
+                        const emailError = document.createElement('small');
+                        emailError.textContent = '请输入有效的邮箱地址';
+                        emailError.style.color = 'red';
+                        emailError.style.display = 'block';
+
+                        const emailInput = document.getElementById('email');
+                        emailInput.parentNode.appendChild(emailError);
+
+                        return;
+                    }
+
+                    // 立即置灰按钮
+                    getEmailVerificationCodeButton.disabled = true;
+                    getEmailVerificationCodeButton.style.pointerEvents = 'none'; // 禁用点击事件
+                    getEmailVerificationCodeButton.style.backgroundColor = '#ccc'; // 设置按钮置灰
+                    getEmailVerificationCodeButton.style.fontSize = '12px'; // 调整字体大小
+                    getEmailVerificationCodeButton.textContent = '60秒后重新获取';
+
+                    // 启动倒计时
+                    startCountdown(getEmailVerificationCodeButton);
+
+                    try {
+                        const response = await fetch(`${API_CONFIG.getBaseURL()}/users/send-email-verification-code`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email }) // 确保 email 被正确传递
+                        });
+
+                        const result = await response.json();
+                        if (result.code === 200) {
+                            alert('验证码已发送到您的邮箱！');
+                        } else {
+                            alert(result.message || '发送验证码失败');
+                        }
+                    } catch (error) {
+                        alert('发送验证码失败，请稍后重试。');
+                        console.error('发送验证码请求出错:', error);
+                    }
+                });
+
             } else if (type === 'register-phone') {
                 formTitle.textContent = '手机注册';
                 formContent.innerHTML = `
@@ -280,6 +351,10 @@
                         <div class="form-group">
                             <input type="tel" id="phone" placeholder="请输入手机号" required>
                         </div>
+                        <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                            <input type="text" id="verificationCode" placeholder="请输入验证码" style="flex: 2; height: 40px;" required maxlength="6" oninput="this.value = this.value.replace(/\\D/g, '')">
+                            <button type="button" id="getVerificationCode" style="flex: 1; height: 40px; padding: 0;">获取验证码</button>
+                        </div>
                         <div class="form-group">
                             <input type="password" id="password" placeholder="设置密码" required>
                         </div>
@@ -291,21 +366,124 @@
                         <a onclick="showForm('login')">已有账号？返回登录</a>
                     </div>
                 `;
+
+                // 获取验证码按钮逻辑
+                const getVerificationCodeButton = document.getElementById('getVerificationCode');
+                getVerificationCodeButton.addEventListener('click', async () => {
+                    // 立即置灰按钮
+                    getVerificationCodeButton.disabled = true;
+                    getVerificationCodeButton.style.pointerEvents = 'none'; // 禁用点击事件
+                    getVerificationCodeButton.style.backgroundColor = '#ccc'; // 设置按钮置灰
+                    getVerificationCodeButton.style.fontSize = '12px'; // 调整字体大小
+                    getVerificationCodeButton.textContent = '60秒后重新获取';
+
+                    // 启动倒计时
+                    startCountdown(getVerificationCodeButton);
+
+                    const phone = document.getElementById('phone').value.trim();
+                    if (!/^1[3-9]\d{9}$/.test(phone)) {
+                        alert('请输入有效的手机号');
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`${API_CONFIG.getBaseURL()}/users/sendVerificationCode`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ phoneNumber: phone })
+                        });
+
+                        const result = await response.json();
+                        if (result.code === 200) {
+                            alert('验证码已发送到您的手机号！');
+                        } else {
+                            alert(result.message || '发送验证码失败');
+                        }
+                    } catch (error) {
+                        alert('发送验证码失败，请稍后重试。');
+                        console.error('发送验证码请求出错:', error);
+                    }
+                });
             } else if (type === 'forgot-password') {
                 formTitle.textContent = '忘记密码';
                 formContent.innerHTML = `
-                    <form>
+                    <form onsubmit="handleForgotPassword(event)">
                         <div class="form-group">
-                            <input type="email" placeholder="请输入注册邮箱" required>
+                            <input type="email" id="forgot-email" placeholder="请输入注册邮箱" required>
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                            <input type="text" id="forgot-verification-code" placeholder="请输入验证码" style="flex: 2; height: 40px;" required maxlength="6" oninput="this.value = this.value.replace(/\\D/g, '')">
+                            <button type="button" id="getForgotVerificationCode" style="flex: 1; height: 40px; padding: 0;">获取验证码</button>
                         </div>
                         <div class="form-group">
-                            <button type="submit">重置密码</button>
+                            <input type="password" id="new-password" placeholder="请输入新密码" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="password" id="confirm-password" placeholder="再次输入新密码" required>
+                            <small id="password-match-error" style="color: red; display: none;">两次输入的密码不一致</small>
+                        </div>
+                        <div class="form-group">
+                            <button type="submit">提交</button>
                         </div>
                     </form>
                     <div class="links">
-                        <a onclick="showForm('login')">已有账号？返回登录</a>
+                        <a onclick="showForm('login')">返回登录</a>
                     </div>
                 `;
+
+                // 获取验证码按钮逻辑
+                const getForgotVerificationCodeButton = document.getElementById('getForgotVerificationCode');
+                getForgotVerificationCodeButton.addEventListener('click', async () => {
+                    const email = document.getElementById('forgot-email').value.trim();
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+                    // 移除之前的错误提示
+                    const existingError = document.querySelector('#forgot-email + small');
+                    if (existingError) {
+                        existingError.remove();
+                    }
+
+                    // 验证邮箱格式
+                    if (!emailRegex.test(email)) {
+                        const emailError = document.createElement('small');
+                        emailError.textContent = '请输入有效的邮箱地址';
+                        emailError.style.color = 'red';
+                        emailError.style.display = 'block';
+
+                        const emailInput = document.getElementById('forgot-email');
+                        emailInput.parentNode.appendChild(emailError);
+
+                        return;
+                    }
+
+                    // 立即置灰按钮
+                    getForgotVerificationCodeButton.disabled = true;
+                    getForgotVerificationCodeButton.style.pointerEvents = 'none';
+                    getForgotVerificationCodeButton.style.backgroundColor = '#ccc';
+                    getForgotVerificationCodeButton.style.fontSize = '12px';
+                    getForgotVerificationCodeButton.textContent = '60秒后重新获取';
+
+                    // 启动倒计时
+                    startCountdown(getForgotVerificationCodeButton);
+
+                    try {
+                        const response = await fetch(`${API_CONFIG.getBaseURL()}/users/send-email-verification-code`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email })
+                        });
+
+                        const result = await response.json();
+                        if (result.code === 200) {
+                            alert('验证码已发送到您的邮箱！');
+                        } else {
+                            alert(result.message || '发送验证码失败');
+                        }
+                    } catch (error) {
+                        alert('发送验证码失败，请稍后重试。');
+                        console.error('发送验证码请求出错:', error);
+                    }
+                });
             } else if (type === 'login') {
                 formTitle.textContent = '登录';
                 formContent.innerHTML = `
@@ -318,12 +496,39 @@
                             <input type="password" id="login-password" placeholder="密码" required>
                             <small id="password-error"></small>
                         </div>
+                        <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                            <input type="text" id="captcha-code" placeholder="请输入验证码" style="flex: 2;" required>
+                            <img id="captcha-image" src="" alt="验证码" style="flex: 1; cursor: pointer;" onclick="refreshCaptcha()">
+                            <small id="captcha-error"></small>
+                        </div>
                         <div class="form-group">
                             <button type="submit">登录</button>
                         </div>
                     </form>
                 `;
             }
+        }
+
+        function startCountdown(button) {
+            let countdown = 60;
+            button.disabled = true;
+            button.style.pointerEvents = 'none'; // 禁用点击事件
+            button.style.backgroundColor = '#ccc'; // 设置按钮置灰
+            button.style.fontSize = '12px'; // 调整字体大小
+            button.textContent = `${countdown}秒后重新获取`;
+
+            const interval = setInterval(() => {
+                countdown--;
+                button.textContent = `${countdown}秒后重新获取`;
+
+                if (countdown <= 0) {
+                    clearInterval(interval);
+                    button.disabled = false;
+                    button.style.pointerEvents = ''; // 恢复点击事件
+                    button.style.backgroundColor = ''; // 恢复按钮背景颜色
+                    button.textContent = '获取验证码';
+                }
+            }, 1000);
         }
 
         function validateIdentifier(identifier) {
@@ -337,6 +542,7 @@
 
             const identifier = document.getElementById('login-identifier').value.trim();
             const password = document.getElementById('login-password').value.trim();
+            const captchaCode = document.getElementById('captcha-code').value.trim();
             const identifierError = document.getElementById('identifier-error');
             const passwordError = document.getElementById('password-error');
 
@@ -358,8 +564,42 @@
                 hasError = true;
             }
 
+            if (!captchaCode) {
+                const captchaError = document.getElementById('captcha-error');
+                captchaError.textContent = '验证码不能为空';
+                captchaError.style.display = 'block';
+                hasError = true;
+            }
+
             if (hasError) return;
 
+            // 验证验证码
+            try {
+                const captchaResponse = await fetch(`${API_CONFIG.getBaseURL()}/users/verify-captcha`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ captcha: captchaCode })
+                });
+
+                const captchaResult = await captchaResponse.json();
+                const captchaError = document.getElementById('captcha-error');
+                if (captchaResult.code !== 200) {
+                    captchaError.textContent = captchaResult.message || '验证码错误';
+                    captchaError.style.display = 'block';
+                    refreshCaptcha(); // 刷新验证码
+                    return;
+                } else {
+                    captchaError.style.display = 'none';
+                }
+            } catch (error) {
+                const captchaError = document.getElementById('captcha-error');
+                captchaError.textContent = '验证码验证失败，请稍后重试。';
+                captchaError.style.display = 'block';
+                console.error('验证码验证请求出错:', error);
+                return;
+            }
+
+            // 验证账号密码
             const data = { identifier, password };
 
             try {
@@ -393,6 +633,49 @@
             const email = document.getElementById('email')?.value || '';
             const phoneNumber = document.getElementById('phone')?.value || '';
             const password = document.getElementById('password')?.value || '';
+            const verificationCode = document.getElementById('emailVerificationCode')?.value || document.getElementById('verificationCode')?.value || '';
+
+            // 验证邮箱格式
+            if (type === 'email') {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    const emailError = document.createElement('small');
+                    emailError.textContent = '请输入有效的邮箱地址';
+                    emailError.style.color = 'red';
+                    emailError.style.display = 'block';
+
+                    const emailInput = document.getElementById('email');
+                    emailInput.parentNode.appendChild(emailError);
+
+                    return;
+                }
+            }
+
+            // 验证验证码
+            try {
+                const verifyResponse = await fetch(`${API_CONFIG.getBaseURL()}/users/verify-code`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: type === 'email' ? email : phoneNumber, code: verificationCode })
+                });
+
+                const verifyResult = await verifyResponse.json();
+                if (verifyResult.code !== 200) {
+                    const verificationError = document.createElement('small');
+                    verificationError.textContent = verifyResult.message || '验证码无效或已过期';
+                    verificationError.style.color = 'red';
+                    verificationError.style.display = 'block';
+
+                    const verificationInput = document.getElementById(type === 'email' ? 'emailVerificationCode' : 'verificationCode');
+                    verificationInput.parentNode.appendChild(verificationError);
+
+                    return;
+                }
+            } catch (error) {
+                alert('验证码验证失败，请稍后重试。');
+                console.error('验证码验证请求出错:', error);
+                return;
+            }
 
             // 构建请求体：根据 type 决定字段
             const data = type === 'email'
@@ -424,7 +707,53 @@
             }
         }
 
+        async function handleForgotPassword(event) {
+            event.preventDefault();
 
+            const email = document.getElementById('forgot-email').value.trim();
+            const verificationCode = document.getElementById('forgot-verification-code').value.trim();
+            const newPassword = document.getElementById('new-password').value.trim();
+            const confirmPassword = document.getElementById('confirm-password').value.trim();
+            const passwordMatchError = document.getElementById('password-match-error');
+
+            // 重置错误提示
+            passwordMatchError.style.display = 'none';
+
+            // 验证两次密码是否一致
+            if (newPassword !== confirmPassword) {
+                passwordMatchError.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_CONFIG.getBaseURL()}/users/reset-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, code: verificationCode, newPassword })
+                });
+
+                const result = await response.json();
+                if (result.code === 200) {
+                    alert('密码重置成功！');
+                    showForm('login');
+                } else {
+                    alert(result.message || '密码重置失败');
+                }
+            } catch (error) {
+                alert('密码重置失败，请稍后重试。');
+                console.error('密码重置请求出错:', error);
+            }
+        }
+
+        function refreshCaptcha() {
+            const captchaImage = document.getElementById('captcha-image');
+            captchaImage.src = `${API_CONFIG.getBaseURL()}/users/captcha`;
+        }
+
+        // 初始化验证码图片
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshCaptcha();
+        });
     </script>
 </body>
 

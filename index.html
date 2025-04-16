@@ -183,9 +183,6 @@
         .dropdown-content a i {
             font-size: 16px; /* 图标大小 */
         }
-        .dropdown:hover .dropdown-content {
-            display: block; /* 鼠标悬浮时显示下拉菜单 */
-        }
         #user-info {
             display: flex;
             align-items: center; /* 垂直居中 */
@@ -304,10 +301,45 @@
 
         // 模拟用户信息
         const userInfo = document.getElementById('user-info');
+        const dropdownContent = document.querySelector('.dropdown-content');
+
+        // 判断是否为移动端设备
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+        if (isMobile) {
+            // 手机端通过点击展示下拉菜单
+            let isDropdownVisible = false;
+
+            userInfo.addEventListener('click', () => {
+                isDropdownVisible = !isDropdownVisible;
+                dropdownContent.style.display = isDropdownVisible ? 'block' : 'none';
+            });
+
+            // 点击页面其他地方时隐藏下拉菜单
+            document.addEventListener('click', (event) => {
+                if (!userInfo.contains(event.target) && !dropdownContent.contains(event.target)) {
+                    isDropdownVisible = false;
+                    dropdownContent.style.display = 'none';
+                }
+            });
+        } else {
+            // PC 端保留鼠标悬浮展示效果
+            const dropdown = document.querySelector('.dropdown');
+            dropdown.addEventListener('mouseenter', () => {
+                dropdownContent.style.display = 'block';
+            });
+            dropdown.addEventListener('mouseleave', () => {
+                dropdownContent.style.display = 'none';
+            });
+        }
+
         const logoutButton = document.getElementById('logout-button');
 
         // 设置用户信息
-        const username = sessionStorage.getItem('username') || '用户';
+        let username = sessionStorage.getItem('username') || '用户';
+        if (username.includes('@')) {
+            username = username.split('@')[0]; // 去掉邮箱后缀
+        }
         userInfo.textContent = `欢迎, ${username}`;
 
         // 退出登录逻辑
